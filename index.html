@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>转移性肝癌患者登记系统 · 江苏省人民医院</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background: #f8fafc; color: #111827; }
+    input, select, textarea, button { font-family: inherit; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px !important; }
+    button:active { opacity: .85; transform: scale(.98); }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="app-shared.jsx"></script>
+<script type="text/babel" src="app-login.jsx"></script>
+<script type="text/babel" src="app-patients.jsx"></script>
+<script type="text/babel" src="app-form.jsx"></script>
+<script type="text/babel" src="app-detail.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script type="text/babel">
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "blue",
+  "density": "comfortable"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [screen, setScreen] = React.useState('login');
+  const [selectedPatient, setSelectedPatient] = React.useState(null);
+
+  function navigate(s) { setScreen(s); }
+  function viewPatient(p) { setSelectedPatient(p); setScreen('detail'); }
+  function newPatient() { setScreen('form'); }
+  function goBack() { setScreen('patients'); }
+
+  const theme = tweaks.theme || 'blue';
+  const T = THEMES[theme] || THEMES.blue;
+
+  const showNav = screen !== 'login';
+
+  return React.createElement(React.Fragment, null,
+    showNav && React.createElement(Header, { currentScreen: screen, onNavigate: navigate, theme }),
+
+    screen === 'login'     && React.createElement(LoginScreen,    { onLogin: () => navigate('patients'), theme }),
+    screen === 'patients'  && React.createElement(PatientsScreen, { onNavigate: navigate, onNewPatient: newPatient, onViewPatient: viewPatient, theme }),
+    screen === 'form'      && React.createElement(FormScreen,     { onBack: goBack, theme }),
+    screen === 'detail'    && React.createElement(DetailScreen,   { patient: selectedPatient, onBack: goBack, theme }),
+    screen === 'statistics'&& React.createElement(StatisticsPlaceholder, { theme: T }),
+    screen === 'export'    && React.createElement(ExportPlaceholder, { theme: T }),
+
+    React.createElement(TweaksPanel, null,
+      React.createElement(TweakSection, { title: '主题色' },
+        React.createElement(TweakRadio, {
+          label: '配色方案',
+          value: tweaks.theme,
+          options: [{ label: '医疗蓝', value: 'blue' }, { label: '临床绿', value: 'teal' }, { label: '深海蓝', value: 'navy' }],
+          onChange: v => setTweak('theme', v),
+        })
+      ),
+      React.createElement(TweakSection, { title: '显示密度' },
+        React.createElement(TweakRadio, {
+          label: '表格密度',
+          value: tweaks.density,
+          options: [{ label: '紧凑', value: 'compact' }, { label: '舒适', value: 'comfortable' }],
+          onChange: v => setTweak('density', v),
+        })
+      ),
+    ),
+  );
+}
+
+function StatisticsPlaceholder({ theme }) {
+  return React.createElement('div', {
+    style: { minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: '#9ca3af' }
+  },
+    React.createElement('div', { style: { fontSize: 48 } }, '📊'),
+    React.createElement('div', { style: { fontSize: 18, fontWeight: 600, color: '#374151' } }, '统计分析'),
+    React.createElement('div', { style: { fontSize: 13 } }, '管理员仪表盘 — 开发中'),
+  );
+}
+
+function ExportPlaceholder({ theme }) {
+  return React.createElement('div', {
+    style: { minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: '#9ca3af' }
+  },
+    React.createElement('div', { style: { fontSize: 48 } }, '📥'),
+    React.createElement('div', { style: { fontSize: 18, fontWeight: 600, color: '#374151' } }, '数据导出'),
+    React.createElement('div', { style: { fontSize: 13 } }, '脱敏 Excel 导出 — 开发中'),
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(App));
+</script>
+
+</body>
+</html>
